@@ -197,7 +197,7 @@ namespace brachy2ndcheck
 
             }
 
-            
+            double[,] test = Program.Catheters(filein);
             double[,] tandem = Program.TandemArray(filein);
             int tandemlen = tandem.GetLength(0);
             double x = 0;

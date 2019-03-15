@@ -152,6 +152,47 @@ namespace brachy2ndcheck
             return count;
         }
 
+        public static double[,] Catheters(byte[] searchIn)
+        {
+            byte[] cntrtypedcm = { 0x06, 0x30, 0x42, 0x00 };
+            byte[] ctrlpointsdcm = { 0x06, 0x30, 0x50, 0x00 };
+            byte[] endofcath = { 0x06, 0x30, 0x80, 0x00 };
+            string result = "";
+            int temp = 0;
+            List<int> cathloc = new List<int>();
+            string cath = "OPEN_NONPLANAR";
+            temp = ByteSearch(searchIn, cntrtypedcm, temp);
+            while (temp > -1) {
+                result = stringTag(cntrtypedcm, searchIn, 1, temp-10);
+                if (result == cath)
+                {
+                    cathloc.Add(temp);
+                }
+                temp = ByteSearch(searchIn, cntrtypedcm, temp+1);
+            }
+
+            double[,] points = new double[cathloc.Count, 6];
+
+
+            for (int i = 0; i < cathloc.Count; i++)
+            {
+                result = stringTag(ctrlpointsdcm, searchIn, 1, cathloc[i]);
+                string[] results = result.Split(new char[] { '\\' });
+                for (int j=0; j<6; j++)
+                {
+                    points[i, j] = double.Parse(results[j]);
+                }
+            }
+
+            double A = Math.Abs(points[0, 2] - points[1, 2]);
+            double B = Math.Abs(points[0, 2] - points[2, 2]);
+            double C = Math.Abs(points[1, 2] - points[2, 2]);
+            double[,] tno = points;
+
+
+            return points;
+        }
+
         public static double[,] TandemArray(byte[] searchIn)
         {
             byte[] cathnumdcm = { 0x0A, 0x30, 0x82, 0x02 };
