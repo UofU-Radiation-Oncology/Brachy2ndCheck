@@ -188,19 +188,42 @@ namespace brachy2ndcheck
             double B = Math.Abs(points[0, 2] - points[2, 2]);
             double C = Math.Abs(points[1, 2] - points[2, 2]);
             double[,] tno = points;
-
-
+            if (B < C && B < A)
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    tno[2, i] = points[1, i];
+                    tno[1, i] = points[2, i];
+                }
+            }
+            if (C < B && C < A)
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    tno[2, i] = points[0, i];
+                    tno[0, i] = points[2, i];
+                }
+            }
+            points = tno;
+            if (points[0, 0] > points[1, 0])
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    tno[1, i] = points[0, i];
+                    tno[0, i] = points[1, i];
+                }
+            }
             return points;
         }
 
-        public static double[,] TandemArray(byte[] searchIn)
+        public static double[,] TandemArray(byte[] searchIn, int num)
         {
             byte[] cathnumdcm = { 0x0A, 0x30, 0x82, 0x02 };
             byte[] ctrlpointsdcm = { 0x0A, 0x30, 0x10, 0x01 };
             byte[] dcm3D = { 0x0A, 0x30, 0xD4, 0x02};
             int tandemloc = 0;
             string temp = "";
-            for (int i = 1; i < 4; i++)
+            for (int i = 1; i < num+1; i++)
             {
                 tandemloc = ByteSearch(searchIn, cathnumdcm, tandemloc +1);
             }

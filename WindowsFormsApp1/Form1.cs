@@ -197,8 +197,10 @@ namespace brachy2ndcheck
 
             }
 
-            double[,] test = Program.Catheters(filein);
-            double[,] tandem = Program.TandemArray(filein);
+            double[,] catheters = Program.Catheters(filein);
+            double[,] ovoid1st = Program.TandemArray(filein, 1);
+            double[,] ovoid2nd = Program.TandemArray(filein, 2);
+            double[,] tandem = Program.TandemArray(filein,3);
             int tandemlen = tandem.GetLength(0);
             double x = 0;
             double y = 0;
@@ -273,6 +275,15 @@ namespace brachy2ndcheck
             textBox1.AppendText("Right Point B is " + Br.ToString() + "mm right of the tandem." + Environment.NewLine);
             //textBox1.AppendText("A distance: " + Adis.ToString() + Environment.NewLine);
             //textBox1.AppendText("B distance: " + Bdis.ToString() + Environment.NewLine);
+
+
+            double Ov1offset = Math.Sqrt(Math.Pow(ovoid1st[0, 0] - catheters[0, 0],2) + Math.Pow(ovoid1st[0, 1] - catheters[0, 1],2) + Math.Pow(ovoid1st[0, 2] - catheters[0, 2],2));
+            double Ov2offset = Math.Sqrt(Math.Pow(ovoid2nd[0, 0] - catheters[1, 0],2) + Math.Pow(ovoid2nd[0, 1] - catheters[1, 1],2) + Math.Pow(ovoid2nd[0, 2] - catheters[1, 2],2));
+            double tandoffset = Math.Sqrt(Math.Pow(tandem[0, 0] - catheters[2, 0],2) + Math.Pow(tandem[0, 1] - catheters[2, 1],2) + Math.Pow(tandem[0, 2] - catheters[2, 2],2));
+
+            
+
+
 
             string excelpath = "X:\\RadOnc\\Physics\\BRACHYTHERAPY\\HDR\\HDR QA\\Source exchange\\";
             excelpath = excelpath + DateTime.Now.Year.ToString();
