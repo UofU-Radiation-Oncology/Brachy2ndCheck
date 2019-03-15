@@ -168,8 +168,7 @@ namespace brachy2ndcheck
             Console.WriteLine(ctrlpnts);
             double[,] points = new double[ctrlpnts, 3];
 
-            tandemloc = 0;
-
+            
             for (int i=0; i<ctrlpnts;i++)
             {
                 temp = stringTag(dcm3D, searchIn, 2*i + 1, tandemloc);
