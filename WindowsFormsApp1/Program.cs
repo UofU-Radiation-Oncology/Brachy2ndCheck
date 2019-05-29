@@ -121,6 +121,60 @@ namespace brachy2ndcheck
         }
 
 
+        public static double[,] ApplicatorPoints(byte[] searchIn)
+        {
+            byte[] ContourType = { 0x06, 0x30, 0x42, 0x00 };
+            byte[] ContourData = { 0x06, 0x30, 0x50, 0x00 };
+            byte[] length = new byte[2];
+            int n = CountOccurences(searchIn, ContourType);
+            double[,] points = new double[3, 6];
+            int count = 0;
+            int tagloc = 0;
+            for (int i=0; i<n; i++)
+            {
+                tagloc = ByteSearch(searchIn, ContourData, tagloc +1);
+                Array.Copy(searchIn, tagloc + 6, length, 0, 2);
+                short len = BitConverter.ToInt16(length, 0);
+                if (len > 55)
+                {
+                    string temp = stringTag(ContourData, searchIn, 1, tagloc - 10);
+                    string[] templist = temp.Split(new char[] {'\\'});
+                    for (int j = 0; j < 6; j++)
+                    {
+                        points[count, j] = double.Parse(templist[j]);
+                    }
+                    count = count + 1;
+                }
+            }
+            return points;
+        }
+
+        public static double[,] FirstDwellPosition(byte[] searchIn)
+        {
+            byte[] cathnumdcm = { 0x0A, 0x30, 0x82, 0x02 };
+            byte[] ctrlpointsdcm = { 0x0A, 0x30, 0xD0, 0x02 };
+            byte[] dcm3D = { 0x0A, 0x30, 0xD4, 0x02 };
+            
+            int n = CountOccurences(searchIn, cathnumdcm);
+            double[,] points = new double[n, 3];
+            int count = 0;
+            int tagloc = 0;
+            for (int i = 0; i < n; i++)
+            {
+                tagloc = ByteSearch(searchIn, ctrlpointsdcm, tagloc + 1);
+                string temp = stringTag(dcm3D, searchIn, 1, tagloc);
+                string[] templist = temp.Split(new char[] { '\\' });
+                for (int j = 0; j < 3; j++)
+                {
+                    points[count, j] = double.Parse(templist[j]);
+                }
+                count = count + 1;
+                
+            }
+            return points;
+        }
+
+
         public static string stringTag(byte[] tag, byte[] file, int nth = 1, int startpos = 0)
         {
             int tagloc = ByteSearch(file, tag, startpos);

@@ -37,7 +37,7 @@ namespace brachy2ndcheck
             ActiveForm.Show();
             textBoxTop.AppendText("Date & Time: " + DateTime.Now);
             textBox1.AppendText("DICOM Information" + Environment.NewLine + Environment.NewLine);
-            textBox2.AppendText("User Entered Information" + Environment.NewLine + Environment.NewLine);
+            textBox2.AppendText("Comparison Information" + Environment.NewLine + "(User Entered or Lookup)" + Environment.NewLine);
             textBox3.AppendText("Matched?" + Environment.NewLine + Environment.NewLine);
             int pathloc = openfile.FileName.LastIndexOf("\\");
             string path = openfile.FileName.Remove(pathloc+1);
@@ -58,6 +58,8 @@ namespace brachy2ndcheck
             byte[] patientpositiondcm = { 0x18, 0x00, 0x00, 0x51 };
             byte[] rxdosedcm = { 0x0A, 0x30, 0xA4, 0x00 };
             byte[] refdistdcm = { 0x0A, 0x30, 0x84, 0x02 };
+            byte[] ContourData = { 0x06, 0x30, 0x50, 0x00 };
+            byte[] sourcestrengthdcm = { 0x0A, 0x30, 0x2A, 0x02 };
             
             int channeltotal = Program.CountOccurences(filein, channeldcm);
             
@@ -72,9 +74,23 @@ namespace brachy2ndcheck
             string rtplandesc = Program.stringTag(rtplandescdcm, filein);
             string rxdose = Program.stringTag(rxdosedcm, filein);
             string patientposition = "";
+            string refdiststr1 = Program.stringTag(refdistdcm, filein, 1);
+            string refdiststr2 = Program.stringTag(refdistdcm, filein, 2);
+            string refdiststr3 = Program.stringTag(refdistdcm, filein, 3);
 
             double rxdosenum = double.Parse(rxdose);
             rxdosenum = Math.Round(rxdosenum * 100);
+
+            double refdist1 = double.Parse(refdiststr1);
+            double refdist2 = double.Parse(refdiststr2);
+            double refdist3 = double.Parse(refdiststr3);
+            string[] refdist = new string[3];
+            refdist[0] = Math.Round(refdist1).ToString();
+            refdist[1] = Math.Round(refdist2).ToString();
+            refdist[2] = Math.Round(refdist3).ToString();
+
+            double[,] applicators = Program.ApplicatorPoints(filein);
+            double[,] firstdwells = Program.FirstDwellPosition(filein);
 
 
             string frameofreference = Program.stringTag(frameofreferenceuid, filein, 3);
@@ -134,17 +150,65 @@ namespace brachy2ndcheck
 
             string userRx = Program.Prompt.ShowDialog("Please enter the prescribed dose per fraction in cGy.", "2nd Check Input");
 
-            textBox1.AppendText("Rx Dose: " + rxdosenum.ToString() + Environment.NewLine);
-            textBox2.AppendText("Rx Dose: " + userRx + Environment.NewLine);
+            textBox1.AppendText("Rx Dose: " + rxdosenum.ToString() + Environment.NewLine + Environment.NewLine);
+            textBox2.AppendText("Rx Dose: " + userRx + Environment.NewLine + Environment.NewLine);
             if (rxdosenum.ToString()  == userRx)
             {
-                textBox3.AppendText("Match" + Environment.NewLine);
+                textBox3.AppendText("Match" + Environment.NewLine + Environment.NewLine);
             }
             else
             {
-                textBox3.AppendText("ERROR" + Environment.NewLine);
+                textBox3.AppendText("ERROR" + Environment.NewLine + Environment.NewLine);
             }
 
+            int n = applicators.Length;
+            n = n / 6;
+            double[] expectoffset = new double[3];
+            expectoffset[0] = -6;
+            expectoffset[1] = -6;
+            expectoffset[2] = -5;
+            string expectrefdist = "1300";
+            for (int i = 0; i < n; i++)
+            {
+                double temp = Math.Sqrt(Math.Pow(firstdwells[i, 0] - applicators[i, 3], 2) + Math.Pow(firstdwells[i, 1] - applicators[i, 4], 2) + Math.Pow(firstdwells[i, 2] - applicators[i, 5], 2)) - Math.Sqrt(Math.Pow(applicators[i, 0] - applicators[i, 3], 2) + Math.Pow(applicators[i, 1] - applicators[i, 4], 2) + Math.Pow(applicators[i, 2] - applicators[i, 5], 2));
+                int num = i + 1;
+                textBox1.AppendText("Reference Distance for Applicator " + num.ToString() + ":  " + refdist[i] + Environment.NewLine);
+                textBox1.AppendText("Offset for Applicator " + num.ToString() + ":  " + Math.Round(temp).ToString() + Environment.NewLine);
+                textBox2.AppendText(expectrefdist + "mm" + Environment.NewLine);
+                if (refdist[i] == expectrefdist)
+                {
+                    textBox3.AppendText("Match" + Environment.NewLine);
+                } else
+                {
+                    textBox3.AppendText("ERROR" + Environment.NewLine);
+                }
+                textBox2.AppendText(expectoffset[i] + "mm" + Environment.NewLine);
+                if (Math.Abs(temp - expectoffset[i]) < 0.01 )
+                {
+                    textBox3.AppendText("Match" + Environment.NewLine);
+                }
+                else
+                {
+                    textBox3.AppendText("ERROR" + Environment.NewLine);
+                }
+            }
+
+            textBox1.AppendText(Environment.NewLine);
+            textBox2.AppendText(Environment.NewLine);
+            textBox3.AppendText(Environment.NewLine);
+
+
+
+            string excelpath = "X:\\RadOnc\\Physics\\BRACHYTHERAPY\\HDR\\HDR QA\\Source exchange\\";
+            excelpath = excelpath + DateTime.Now.Year.ToString();
+            excelpath = excelpath + "_SourceExchangeQA";
+
+            if (!Directory.Exists(excelpath))
+            {
+                excelpath = "X:\\RadOnc\\Physics\\BRACHYTHERAPY\\HDR\\HDR QA\\Source exchange\\";
+                excelpath = excelpath + DateTime.Now.AddYears(-1).Year.ToString();
+                excelpath = excelpath + "_SourceExchangeQA";
+            }
 
             string[,] points = new string[4, 4];
             int pnttotal = Program.CountOccurences(filein, coorddcm);
@@ -231,6 +295,7 @@ namespace brachy2ndcheck
             double tandemap = double.Parse(lastdwellcoord.Substring(lastdwellcoord.IndexOf("\\") + 1, lastdwellcoord.IndexOf("\\", lastdwellcoord.IndexOf("\\") + 1) - lastdwellcoord.IndexOf("\\") - 1));
             double tandemsi = double.Parse(lastdwellcoord.Substring(lastdwellcoord.IndexOf("\\", lastdwellcoord.IndexOf("\\") + 1) + 1, lastdwellcoord.Length - lastdwellcoord.IndexOf("\\", lastdwellcoord.IndexOf("\\") + 1) - 1));
 
+            //textBox1.AppendText(Environment.NewLine + tandemlr + Environment.NewLine + tandemap + Environment.NewLine + tandemsi);
 
             double Adis = Math.Round(Math.Sqrt(Math.Pow(double.Parse(points[0, 1]) - double.Parse(points[1, 1]), 2) + Math.Pow(double.Parse(points[0, 2]) - double.Parse(points[1, 2]), 2) + Math.Pow(double.Parse(points[0, 3]) - double.Parse(points[1, 3]), 2)), 0);
             double Bdis = Math.Round(Math.Sqrt(Math.Pow(double.Parse(points[2, 1]) - double.Parse(points[3, 1]), 2) + Math.Pow(double.Parse(points[2, 2]) - double.Parse(points[3, 2]), 2) + Math.Pow(double.Parse(points[2, 3]) - double.Parse(points[3, 3]), 2)), 0);
@@ -238,6 +303,108 @@ namespace brachy2ndcheck
             double Bl = Math.Round(double.Parse(points[2, 1]) - tandemlr, 0);
             double Ar = Math.Round(double.Parse(points[1, 1]) - tandemlr, 0);
             double Br = Math.Round(double.Parse(points[3, 1]) - tandemlr, 0);
+
+            Ar = -Ar;
+            Br = -Br;
+
+            textBox1.AppendText("Left Point A is " + Al.ToString() + "mm left of the tandem." + Environment.NewLine);
+            textBox1.AppendText("Right Point A is " + Ar.ToString() + "mm right of the tandem." + Environment.NewLine);
+            textBox1.AppendText("Left Point B is " + Bl.ToString() + "mm left of the tandem." + Environment.NewLine);
+            textBox1.AppendText("Right Point B is " + Br.ToString() + "mm right of the tandem." + Environment.NewLine);
+            textBox2.AppendText("20mm" + Environment.NewLine);
+            textBox2.AppendText("20mm" + Environment.NewLine);
+            textBox2.AppendText("50mm" + Environment.NewLine);
+            textBox2.AppendText("50mm" + Environment.NewLine);
+            if (Math.Abs(Al - 20) < 2)
+            {
+                textBox3.AppendText("Match (within 1mm)" + Environment.NewLine);
+            }
+            else
+            {
+                textBox3.AppendText("ERROR" + Environment.NewLine);
+            }
+            if (Math.Abs(Ar - 20) < 2)
+            {
+                textBox3.AppendText("Match (within 1mm)" + Environment.NewLine);
+            }
+            else
+            {
+                textBox3.AppendText("ERROR" + Environment.NewLine);
+            }
+            if (Math.Abs(Bl - 50) < 4)
+            {
+                textBox3.AppendText("Match (within 3mm)" + Environment.NewLine);
+            }
+            else
+            {
+                textBox3.AppendText("ERROR" + Environment.NewLine);
+            }
+            if (Math.Abs(Br - 50) < 4)
+            {
+                textBox3.AppendText("Match (within 3mm)" + Environment.NewLine);
+            }
+            else
+            {
+                textBox3.AppendText("ERROR" + Environment.NewLine);
+            }
+
+            textBox1.AppendText(Environment.NewLine);
+            textBox2.AppendText(Environment.NewLine);
+            textBox3.AppendText(Environment.NewLine);
+
+            if (Directory.Exists(excelpath))
+            {
+                //textBox1.AppendText(Environment.NewLine + excelpath);
+                string[] folders = Directory.GetDirectories(excelpath);
+
+                if (!Directory.Exists(folders[folders.Length - 1]))
+                {
+                    excelpath = "X:\\RadOnc\\Physics\\BRACHYTHERAPY\\HDR\\HDR QA\\Source exchange\\";
+                    excelpath = excelpath + DateTime.Now.AddYears(-1).Year.ToString();
+                    excelpath = excelpath + "_SourceExchangeQA";
+                    folders = Directory.GetDirectories(excelpath);
+                }
+
+                excelpath = folders[folders.Length - 1] + "\\" + folders[folders.Length - 1].Substring(folders[folders.Length - 1].Length - 8) + ".xlsx";
+
+                _Application excel = new _Excel.Application();
+                Workbook wb = excel.Workbooks.Open(excelpath);
+                Worksheet ws = wb.Worksheets[3];
+                DateTime sourcetime = ws.Cells[14, 9].Value;
+                double sourcestrength = ws.Cells[14, 3].Value2;
+                if (Math.Abs(sourcestrength - 12) > 3)
+                {
+                    textBox2.AppendText("Source Exchange Data could not be found." + Environment.NewLine);
+
+                }
+                DateTime dtcurrent = DateTime.Now;
+                TimeSpan decaytime = dtcurrent - sourcetime;
+                double currentstrength = sourcestrength * Math.Exp(decaytime.TotalDays * Math.Log(0.5) / 73.83);
+                textBox2.AppendText("Current Source Strength: " + Math.Round(currentstrength, 3).ToString() + "mCi" + Environment.NewLine);
+
+                string plansourcestrength = Program.stringTag(sourcestrengthdcm, filein);
+                double planstrength = double.Parse(plansourcestrength)*0.000243;
+                textBox1.AppendText("Plan Source Strength: " + Math.Round(planstrength,3).ToString() + "mCi");
+                if (Math.Abs(planstrength - currentstrength) < 0.1*planstrength)
+                {
+                    textBox3.AppendText("Match (within 1% of plan Activity)" + Environment.NewLine);
+                }
+                else
+                {
+                    textBox3.AppendText("ERROR (off by >1% of plan Activity)" + Environment.NewLine);
+                }
+
+            }
+            else
+            {
+                textBox2.AppendText("Source Exchange Data could not be found." + Environment.NewLine);
+            }
+
+            
+
+
+
+
 
             if (Math.Abs(Math.Abs(Adis) - 40) > 2)
             {
@@ -264,61 +431,14 @@ namespace brachy2ndcheck
                 textBox1.AppendText(Environment.NewLine + "MAKE SURE THAT YOUR POINT B POINTS ARE ON THE CORRECT SIDE OF THE PATIENT AND THAT YOUR LABELS ARE CORRECT.");
             }
 
-            Ar = -Ar;
-            Br = -Br;
-
-            textBox1.AppendText("Left Point A is " + Al.ToString() + "mm left of the tandem." + Environment.NewLine);
-            textBox1.AppendText("Right Point A is " + Ar.ToString() + "mm right of the tandem." + Environment.NewLine);
-            textBox1.AppendText("Left Point B is " + Bl.ToString() + "mm left of the tandem." + Environment.NewLine);
-            textBox1.AppendText("Right Point B is " + Br.ToString() + "mm right of the tandem." + Environment.NewLine);
+            
             //textBox1.AppendText("A distance: " + Adis.ToString() + Environment.NewLine);
             //textBox1.AppendText("B distance: " + Bdis.ToString() + Environment.NewLine);
 
-            string excelpath = "X:\\RadOnc\\Physics\\BRACHYTHERAPY\\HDR\\HDR QA\\Source exchange\\";
-            excelpath = excelpath + DateTime.Now.Year.ToString();
-            excelpath = excelpath + "_SourceExchangeQA";
+           
 
-            if (!Directory.Exists(excelpath))
-            {
-                excelpath = "X:\\RadOnc\\Physics\\BRACHYTHERAPY\\HDR\\HDR QA\\Source exchange\\";
-                excelpath = excelpath + DateTime.Now.AddYears(-1).Year.ToString();
-                excelpath = excelpath + "_SourceExchangeQA";
-            }
+            
 
-            if (Directory.Exists(excelpath))
-            {
-                //textBox1.AppendText(Environment.NewLine + excelpath);
-                string[] folders = Directory.GetDirectories(excelpath);
-
-                if (!Directory.Exists(folders[folders.Length-1]))
-                {
-                    excelpath = "X:\\RadOnc\\Physics\\BRACHYTHERAPY\\HDR\\HDR QA\\Source exchange\\";
-                    excelpath = excelpath + DateTime.Now.AddYears(-1).Year.ToString();
-                    excelpath = excelpath + "_SourceExchangeQA";
-                    folders = Directory.GetDirectories(excelpath);
-                }
-
-                excelpath = folders[folders.Length-1] + "\\" + folders[folders.Length-1].Substring(folders[folders.Length-1].Length - 8) + ".xlsx";
-
-                _Application excel = new _Excel.Application();
-                Workbook wb = excel.Workbooks.Open(excelpath);
-                Worksheet ws = wb.Worksheets[3];
-                DateTime sourcetime = ws.Cells[14, 9].Value;
-                double sourcestrength = ws.Cells[14,3].Value2;
-                if (Math.Abs(sourcestrength - 12) > 3)
-                {
-                    textBox1.AppendText("Source Exchange Data could not be found." + Environment.NewLine);
-
-                }
-                DateTime dtcurrent = DateTime.Now;
-                TimeSpan decaytime = dtcurrent - sourcetime;
-                double currentstrength = sourcestrength * Math.Exp(decaytime.TotalDays * Math.Log(2) / -73.83);
-                textBox1.AppendText(Environment.NewLine + currentstrength.ToString());
-            }
-            else
-            {
-                textBox1.AppendText("Source Exchange Data could not be found." + Environment.NewLine);
-            }
         }
 
         private void textBox2_TextChanged(object sender, EventArgs e)

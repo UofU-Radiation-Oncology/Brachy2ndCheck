@@ -42,7 +42,7 @@
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
             this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.textBox1.Size = new System.Drawing.Size(239, 492);
+            this.textBox1.Size = new System.Drawing.Size(289, 492);
             this.textBox1.TabIndex = 2;
             this.textBox1.WordWrap = false;
             // 
@@ -53,7 +53,7 @@
             // 
             // textBox2
             // 
-            this.textBox2.Location = new System.Drawing.Point(257, 45);
+            this.textBox2.Location = new System.Drawing.Point(307, 45);
             this.textBox2.Multiline = true;
             this.textBox2.Name = "textBox2";
             this.textBox2.ScrollBars = System.Windows.Forms.ScrollBars.Both;
@@ -64,7 +64,7 @@
             // 
             // textBox3
             // 
-            this.textBox3.Location = new System.Drawing.Point(495, 45);
+            this.textBox3.Location = new System.Drawing.Point(545, 45);
             this.textBox3.Multiline = true;
             this.textBox3.Name = "textBox3";
             this.textBox3.ScrollBars = System.Windows.Forms.ScrollBars.Both;
@@ -77,7 +77,7 @@
             this.textBoxTop.Location = new System.Drawing.Point(12, 12);
             this.textBoxTop.Multiline = true;
             this.textBoxTop.Name = "textBoxTop";
-            this.textBoxTop.Size = new System.Drawing.Size(685, 27);
+            this.textBoxTop.Size = new System.Drawing.Size(735, 27);
             this.textBoxTop.TabIndex = 5;
             this.textBoxTop.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.textBoxTop.WordWrap = false;
@@ -86,7 +86,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(708, 549);
+            this.ClientSize = new System.Drawing.Size(758, 549);
             this.Controls.Add(this.textBoxTop);
             this.Controls.Add(this.textBox3);
             this.Controls.Add(this.textBox2);
